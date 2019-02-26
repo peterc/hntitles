@@ -1,0 +1,33 @@
+body {
+  background-color: #fff;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1;
+  font-family: -apple-system,BlinkMacSystemFont,Helvetica,arial,sans-serif;
+  font-size: 16px;
+  line-height: 1.5em;
+  margin: 24px;
+}
+
+.item {
+  margin-bottom: 24px;
+  border-left: 8px solid #ff6600;
+  padding-left: 16px;
+}
+
+.item .title {
+  line-height: 1.4em;
+}
+
+.item .title:last-child {
+  font-weight: 600;
+  font-size: 1.2em;
+}
+
+.item .desc {
+  color: #666;
+}
+
+.item .time {
+  color: #999;
+  font-size: 11px;
+}

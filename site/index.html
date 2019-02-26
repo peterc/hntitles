@@ -1,0 +1,26 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>x</title>
+  <meta name="description" content="x">
+  <meta name="author" content="x">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css.css">
+</head>
+
+<body>
+
+<h1>Hacker News Title Edit Tracker</h1>
+
+<% results.each do |id, res| %>
+  <div class="item">
+    <% res.each do |r| %>
+      <div class="title"><%= r['title'] %> <span class="time"><%= r['created_at'] %></span></div>
+    <% end %> 
+  </div>
+<% end %>
+
+</body>
+</html>
