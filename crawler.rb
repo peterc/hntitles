@@ -12,7 +12,7 @@ NEWSTORIES_URL = "https://hacker-news.firebaseio.com/v0/newstories.json"
 DB = PG.connect(ENV['POSTGRES_URL'])
 
 begin
-  puts "Creating table for titles"
+  puts "Creating table for storing titles"
   DB.exec("CREATE TABLE titles (id bigint, created_at timestamp default now(), title varchar(256), frontpage int default 0);")
 rescue PG::DuplicateTable
   puts "Table already exists - fine"
@@ -22,24 +22,17 @@ def url_to_json(url)
   JSON.load(open(url).read)
 end
 
-def frontpage
-  url_to_json(FRONTPAGE_URL).first(30)
-end
-
-def newstories
-  url_to_json(NEWSTORIES_URL).first(20)
-end
-
 def story_title(id)
   url_to_json("https://hacker-news.firebaseio.com/v0/item/#{id}.json")['title']
 end
 
 # Grab new stories and save titles
-news = newstories.map { |id| [id, story_title(id)] }
+news = url_to_json(NEWSTORIES_URL).first(20).map { |id| [id, story_title(id)] }
 
 # Grab front page stories and save titles
-fronts = frontpage.map { |id| [id, story_title(id)] }
+fronts = url_to_json(FRONTPAGE_URL).first(30).map { |id| [id, story_title(id)] }
 
+# Go through all the items and process accordingly
 (news + fronts).each do |(id, title)|
   puts "#{id}-#{title}"
 
@@ -59,19 +52,27 @@ fronts = frontpage.map { |id| [id, story_title(id)] }
   end
 end
 
-DB.exec("UPDATE titles SET frontpage = 0")
+# Uncomment this if you ONLY want CURRENT frontpage items marked as such
+# DB.exec("UPDATE titles SET frontpage = 0")
 
 # Any stories on the front page, mark as such
 fronts.each do |(id, title)|
   DB.exec_params("UPDATE titles SET frontpage = 1 WHERE id = $1", [id.to_i])
 end
 
-results = DB.exec("select * from titles where id IN (select id from titles group by id having count(*) > 1) AND frontpage = 1 ORDER BY id DESC, created_at DESC;").to_a.group_by { |i| i["id"] }
+if ENV['S3_BUCKET']
+  puts "Uploading results to S3"
 
-puts "Uploading results to S3"
-s3 = Aws::S3::Client.new
-s3.put_object(bucket: ENV['S3_BUCKET'], key: "current.json", body: results.to_json, content_type: 'application/json')
-s3.put_object_acl({ acl: "public-read", bucket: ENV['S3_BUCKET'], key: "current.json" })
+  results = DB.exec("select * from titles where id IN
+    (select id from titles where frontpage = 1 group by id having count(*) > 1 order by id desc limit 50)
+    ORDER BY id DESC, created_at DESC;").to_a.group_by { |i| i["id"] }
+  
+  s3 = Aws::S3::Client.new
+  s3.put_object(bucket: ENV['S3_BUCKET'], key: "current.json", body: results.to_json, content_type: 'application/json')
+  s3.put_object_acl({ acl: "public-read", bucket: ENV['S3_BUCKET'], key: "current.json" })
+end
 
-puts "Triggering Netlify build hook"
-`curl -X POST https://api.netlify.com/build_hooks/5c7583c5f27233a4701e6604`
+if ENV['NETLIFY_WEBHOOK']
+  puts "Triggering Netlify build hook"
+  `curl -X POST -d {} #{ENV['NETLIFY_WEBHOOK']}`
+end
