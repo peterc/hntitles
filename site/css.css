@@ -60,5 +60,6 @@ a {
   font-size: 12px;
   text-align: right;
   width: 50px;
+  min-width: 50px;
   padding-right: 12px;
 }
