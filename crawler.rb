@@ -1,3 +1,4 @@
+require 'aws-sdk'
 require 'open-uri'
 require 'json'
 require 'pg'
@@ -12,7 +13,7 @@ DB = PG.connect(ENV['POSTGRES_URL'])
 
 begin
   puts "Creating table for titles"
-  DB.exec("CREATE TABLE titles (id bigint, created_at timestamp default now(), title varchar(256));")
+  DB.exec("CREATE TABLE titles (id bigint, created_at timestamp default now(), title varchar(256), frontpage int default 0);")
 rescue PG::DuplicateTable
   puts "Table already exists - fine"
 end
@@ -56,11 +57,18 @@ fronts = frontpage.map { |id| [id, story_title(id)] }
     # Otherwise, do nothing.. title has not changed!
     puts "  -> NO CHANGE"
   end
-
 end
 
-#puts "---\nRESULTS:\n\n"
-#p DB.exec("SELECT * FROM titles").to_a
+DB.exec("UPDATE titles SET frontpage = 0")
 
-# select * from titles where id = (select id from titles group by id having count(*) > 1);
-# select * from titles where id IN (select id from titles group by id having count(*) > 1) ORDER BY id DESC, created_at DESC;
+# Any stories on the front page, mark as such
+fronts.each do |(id, title)|
+  DB.exec_params("UPDATE titles SET frontpage = 1 WHERE id = $1", [id.to_i])
+end
+
+results = DB.exec("select * from titles where id IN (select id from titles group by id having count(*) > 1) AND frontpage = 1 ORDER BY id DESC, created_at DESC;").to_a.group_by { |i| i["id"] }
+
+puts "Uploading results to S3"
+s3 = Aws::S3::Client.new
+s3.put_object(bucket: ENV['S3_BUCKET'], key: "current.json", body: results.to_json, content_type: 'application/json')
+s3.put_object_acl({ acl: "public-read", bucket: ENV['S3_BUCKET'], key: "current.json" })

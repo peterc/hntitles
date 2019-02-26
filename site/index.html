@@ -16,7 +16,7 @@
 
 <% results.each do |id, res| %>
   <div class="item">
-    <% res.each do |r| %>
+    <% res.reverse.each do |r| %>
       <div class="title"><%= r['title'] %> <span class="time"><%= r['created_at'] %></span></div>
     <% end %> 
   </div>

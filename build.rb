@@ -1,10 +1,8 @@
 require 'erb'
-require 'pg'
-require 'dotenv'
+require 'open-uri'
+require 'json'
 
-Dotenv.load
 CACHE_FOLDER = "/opt/build/cache"
-DB = PG.connect(ENV['POSTGRES_URL'])
 
 if Dir.exist?("_site")
   puts "Deleting any build artefacts"
@@ -20,10 +18,8 @@ puts "Copying static files to build directory"
 puts "Rendering dynamic stuff"
 
 template = File.read(__dir__ + "/site/index.html")
-results = DB.exec("select * from titles where id IN (select id from titles group by id having count(*) > 1) ORDER BY id DESC, created_at ASC;")
 
-results = results.to_a.group_by { |item| item['id'] }
-
+results = JSON.load(open('https://s3.amazonaws.com/jeanfromeastenders/current.json'))
 
 out = ERB.new(template).result(binding)
 File.open("_site/index.html", "w") { |f| f.puts out }
