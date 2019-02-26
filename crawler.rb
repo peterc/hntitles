@@ -72,3 +72,6 @@ puts "Uploading results to S3"
 s3 = Aws::S3::Client.new
 s3.put_object(bucket: ENV['S3_BUCKET'], key: "current.json", body: results.to_json, content_type: 'application/json')
 s3.put_object_acl({ acl: "public-read", bucket: ENV['S3_BUCKET'], key: "current.json" })
+
+puts "Triggering Netlify build hook"
+`curl -X POST https://api.netlify.com/build_hooks/5c7583c5f27233a4701e6604`
