@@ -14,10 +14,23 @@
 
 <h1>Hacker News Title Edit Tracker</h1>
 
+<p>This page shows the current front page items on <a href="https://news.ycombinator.com/">Hacker News</a> that have been edited since they were first posted to the site.</p>
+
+<p class="buildtime">Last build: <%= Time.now.strftime("%B %-d, %H:%M %z") %></p>
+
 <% results.each do |id, res| %>
   <div class="item">
-    <% res.reverse.each do |r| %>
-      <div class="title"><%= r['title'] %> <span class="time"><%= r['created_at'] %></span></div>
+    <% res.reverse.each.with_index do |r, i| %>
+      <% now = i == res.length - 1 %>
+      <div class="row <%= 'now' if now %>">
+        <div class="time">
+          <%= r['created_at'][/\d+\:\d+/] %>
+        </div>
+        <div class="title"><a href="https://news.ycombinator.com/item?id=<%= r['id'] %>"><%= r['title'] %></a></div>
+      </div>
+      <% if !now %>
+        <div class="arrow">&darr;</div>
+      <% end %>
     <% end %> 
   </div>
 <% end %>
