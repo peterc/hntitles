@@ -16,13 +16,13 @@ end
 puts "Copying static files to build directory"
 `cp site/* _site/`
 
-puts "Rendering dynamic stuff"
+#puts "Rendering dynamic stuff"
 
-template = File.read(__dir__ + "/site/index.html")
+#template = File.read(__dir__ + "/site/index.html")
 
-results = JSON.load(open('https://s3.amazonaws.com/jeanfromeastenders/current.json'))
+#results = JSON.load(open('https://s3.amazonaws.com/jeanfromeastenders/current.json'))
 
-out = ERB.new(template).result(binding)
-File.open("_site/index.html", "w") { |f| f.puts out }
+#out = ERB.new(template).result(binding)
+#File.open("_site/index.html", "w") { |f| f.puts out }
 
 puts "Done"

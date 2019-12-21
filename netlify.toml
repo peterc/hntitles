@@ -1,3 +1,9 @@
 [build]
   command = "bundle exec ruby build.rb"
   publish = "_site"
+
+[[redirects]]
+  from = "/"
+  to = "https://s3.amazonaws.com/jeanfromeastenders/current.html"
+  status = 200
+
